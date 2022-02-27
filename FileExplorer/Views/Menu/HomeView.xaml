@@ -3,12 +3,107 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:prism="http://prismlibrary.com/"
+    xmlns:wpfui="clr-namespace:WPFUI.Controls;assembly=WPFUI"
+    xmlns:wpfuiCommon="clr-namespace:WPFUI.Common;assembly=WPFUI"
     prism:ViewModelLocator.AutoWireViewModel="True">
     <Grid>
-        <TextBlock
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            FontSize="48"
-            Text="Home" />
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <Menu>
+            <MenuItem Header="新規作成" Icon="{x:Static wpfuiCommon:Icon.AddCircle20}" />
+            <Separator />
+            <MenuItem Icon="{x:Static wpfuiCommon:Icon.Cut20}" />
+            <MenuItem Icon="{x:Static wpfuiCommon:Icon.Copy20}" />
+            <MenuItem Icon="{x:Static wpfuiCommon:Icon.ClipboardPaste20}" />
+            <MenuItem Icon="{x:Static wpfuiCommon:Icon.Rename20}" />
+            <MenuItem Icon="{x:Static wpfuiCommon:Icon.Delete20}" />
+            <Separator />
+            <MenuItem Header="並び替え" Icon="{x:Static wpfuiCommon:Icon.ArrowSort20}" />
+        </Menu>
+
+        <Grid Grid.Row="1" Margin="0,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="140" />
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <Button
+                    Width="40"
+                    Margin="5"
+                    Padding="0,5"
+                    Background="Transparent"
+                    BorderThickness="0">
+                    <Button.Content>
+                        <wpfui:Icon Glyph="ArrowLeft20" />
+                    </Button.Content>
+                </Button>
+                <Button
+                    Width="40"
+                    Margin="0,5,5,5"
+                    Padding="0,5"
+                    Background="Transparent"
+                    BorderThickness="0">
+                    <StackPanel>
+                        <wpfui:Icon Glyph="ArrowRight20" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Width="40"
+                    Margin="0,5,5,5"
+                    Padding="0,5"
+                    Background="Transparent"
+                    BorderThickness="0">
+                    <StackPanel>
+                        <wpfui:Icon Glyph="ChevronDown20" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <Border
+                Grid.Column="1"
+                Margin="5,0"
+                BorderBrush="{DynamicResource AccentFillColorDefaultBrush}"
+                BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="40" />
+                    </Grid.ColumnDefinitions>
+
+                    <wpfui:Icon Glyph="Folder20" />
+                    <TextBox Grid.Column="1" Margin="0,5" />
+                    <wpfui:Icon Grid.Column="2" Glyph="ChevronDown20" />
+                    <wpfui:Icon Grid.Column="3" Glyph="ArrowClockwise20" />
+                </Grid>
+            </Border>
+
+            <Border
+                Grid.Column="2"
+                Margin="5,0"
+                BorderBrush="{DynamicResource AccentFillColorDefaultBrush}"
+                BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <wpfui:Icon Glyph="Search20" />
+                    <TextBox Grid.Column="1" Margin="0,5,5,5" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Row="3" Margin="0,5,0,0">
+            <Separator />
+            <DataGrid Margin="0,5,0,0" AutoGenerateColumns="False" />
+        </StackPanel>
     </Grid>
 </UserControl>

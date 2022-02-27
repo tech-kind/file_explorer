@@ -11,8 +11,10 @@ namespace FileExplorer
     /// </summary>
     public partial class App : PrismApplication
     {
+
         protected override Window CreateShell()
         {
+            WPFUI.Theme.Watcher.Start();
             return Container.Resolve<MainWindow>();
         }
 

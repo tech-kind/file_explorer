@@ -5,6 +5,7 @@
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:prism="http://prismlibrary.com/"
     xmlns:wpfui="clr-namespace:WPFUI.Controls;assembly=WPFUI"
+    xmlns:wpfuiCommon="clr-namespace:WPFUI.Common;assembly=WPFUI"
     Width="1200"
     Height="800"
     prism:ViewModelLocator.AutoWireViewModel="True"
@@ -31,10 +32,7 @@
                                         <ColumnDefinition />
                                     </Grid.ColumnDefinitions>
 
-                                    <!--<Path
-                                        Data="{TemplateBinding Tag}"
-                                        Fill="{TemplateBinding Foreground}"
-                                        Style="{StaticResource {x:Type Path}}" />-->
+                                    <wpfui:Icon Glyph="{TemplateBinding Tag}" />
                                     <ContentPresenter
                                         Grid.Column="1"
                                         Margin="10,0"
@@ -87,22 +85,26 @@
                 Content="ホーム"
                 GroupName="Menu"
                 IsChecked="{Binding HomeChecked}"
-                Style="{StaticResource MenuButtonStyle}" />
+                Style="{StaticResource MenuButtonStyle}"
+                Tag="{x:Static wpfuiCommon:Icon.Home20}" />
             <RadioButton
                 Content="最近"
                 GroupName="Menu"
                 IsChecked="{Binding RecentChecked}"
-                Style="{StaticResource MenuButtonStyle}" />
+                Style="{StaticResource MenuButtonStyle}"
+                Tag="{x:Static wpfuiCommon:Icon.History20}" />
             <RadioButton
                 Content="お気に入り"
                 GroupName="Menu"
                 IsChecked="{Binding FavoriteChecked}"
-                Style="{StaticResource MenuButtonStyle}" />
+                Style="{StaticResource MenuButtonStyle}"
+                Tag="{x:Static wpfuiCommon:Icon.Star20}" />
             <RadioButton
                 Content="設定"
                 GroupName="Menu"
                 IsChecked="{Binding SettingChecked}"
-                Style="{StaticResource MenuButtonStyle}" />
+                Style="{StaticResource MenuButtonStyle}"
+                Tag="{x:Static wpfuiCommon:Icon.Settings20}" />
         </StackPanel>
 
         <StackPanel

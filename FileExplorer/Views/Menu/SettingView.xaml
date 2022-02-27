@@ -5,10 +5,35 @@
     xmlns:prism="http://prismlibrary.com/"
     prism:ViewModelLocator.AutoWireViewModel="True">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
         <TextBlock
-            HorizontalAlignment="Center"
+            HorizontalAlignment="Left"
             VerticalAlignment="Center"
-            FontSize="48"
-            Text="Setting" />
+            FontSize="20"
+            Text="環境設定" />
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <StackPanel Margin="10" Orientation="Vertical">
+                <TextBlock Text="テーマ" />
+                <TextBlock
+                    FontSize="8"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="アプリのテーマを設定します。" />
+            </StackPanel>
+            <ComboBox
+                Grid.Column="1"
+                Margin="5,0"
+                SelectedIndex="{Binding ModeIndex}">
+                <ComboBoxItem Content="ライトモード" />
+                <ComboBoxItem Content="ダークモード" />
+            </ComboBox>
+        </Grid>
     </Grid>
 </UserControl>
