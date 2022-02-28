@@ -24,7 +24,7 @@
                         <ControlTemplate TargetType="{x:Type ToggleButton}">
                             <Border
                                 Background="{TemplateBinding Background}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{DynamicResource AccentFillColorDefaultBrush}"
                                 CornerRadius="10,0,0,10">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
