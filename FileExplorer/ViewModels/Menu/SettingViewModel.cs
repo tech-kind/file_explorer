@@ -15,12 +15,27 @@ namespace FileExplorer.ViewModels.Menu
         public int ModeIndex
         {
             get { return _modeIndex; }
-            set { SetProperty(ref _modeIndex, value); }
+            set { 
+                SetProperty(ref _modeIndex, value);
+                ChangeMode();
+            }
         }
 
         public SettingViewModel()
         {
-            _modeIndex = 0;
+            ModeIndex = 1;
+        }
+
+        private void ChangeMode()
+        {
+            if (ModeIndex == 0)
+            {
+                WPFUI.Theme.Manager.Switch(WPFUI.Theme.Style.Light, false);
+            }
+            else
+            {
+                WPFUI.Theme.Manager.Switch(WPFUI.Theme.Style.Dark, false);
+            }
         }
     }
 }

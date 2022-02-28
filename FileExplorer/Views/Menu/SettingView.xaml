@@ -23,12 +23,13 @@
             <StackPanel Margin="10" Orientation="Vertical">
                 <TextBlock Text="テーマ" />
                 <TextBlock
-                    FontSize="8"
+                    FontSize="10"
                     Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                     Text="アプリのテーマを設定します。" />
             </StackPanel>
             <ComboBox
                 Grid.Column="1"
+                Width="150"
                 Margin="5,0"
                 SelectedIndex="{Binding ModeIndex}">
                 <ComboBoxItem Content="ライトモード" />
