@@ -42,6 +42,19 @@ namespace FileExplorer.ViewModels.Menu
             set { SetProperty(ref _fileDirectoryCollection, value); }
         }
 
+        private List<object> _fileDirectorySelectedCollection
+            = new List<object>();
+
+        public List<object> FileDirectorySelectedCollection
+        {
+            get { return _fileDirectorySelectedCollection; }
+            set
+            {
+                SetProperty(ref _fileDirectorySelectedCollection, value);
+                IsSelectedUpdate();
+            }
+        }
+
         public HomeViewModel()
         {
             CurrentPath = new DirectoryInfo(@"C:\projects\Example\interprocess_sample").FullName;
@@ -83,6 +96,28 @@ namespace FileExplorer.ViewModels.Menu
                 FileDirectoryCollection.Add(content);
             }
         }
+
+        private void IsSelectedUpdate()
+        {
+            foreach (var file in FileDirectoryCollection)
+            {
+                file.IsSelected = false;
+            }
+
+            foreach (var selectFile in FileDirectorySelectedCollection)
+            {
+                var castSelect = selectFile as FileDirectoryContent;
+                if (castSelect == null)
+                {
+                    continue;
+                }
+                var file = FileDirectoryCollection.FirstOrDefault(x => x.Name == castSelect.Name);
+                if (file != null)
+                {
+                    file.IsSelected = true;
+                }
+            }
+        }
     }
 
     public class FileDirectoryContent : BindableBase
@@ -91,8 +126,8 @@ namespace FileExplorer.ViewModels.Menu
         /// <summary>
         /// 選択状態
         /// </summary>
-        public bool IsSelected 
-        { 
+        public bool IsSelected
+        {
             get { return _isSelected; }
             set { SetProperty(ref _isSelected, value); }
         }
@@ -101,8 +136,8 @@ namespace FileExplorer.ViewModels.Menu
         /// <summary>
         /// ファイルorディレクトリ名
         /// </summary>
-        public string? Name 
-        { 
+        public string? Name
+        {
             get { return _name; }
             set { SetProperty(ref _name, value); }
         }
@@ -111,8 +146,8 @@ namespace FileExplorer.ViewModels.Menu
         /// <summary>
         /// 種別
         /// </summary>
-        public string? Type 
-        { 
+        public string? Type
+        {
             get { return _type; }
             set { SetProperty(ref _type, value); }
         }
@@ -121,8 +156,8 @@ namespace FileExplorer.ViewModels.Menu
         /// <summary>
         /// 更新日時
         /// </summary>
-        public string? UpdateTime 
-        { 
+        public string? UpdateTime
+        {
             get { return _updateTime; }
             set { SetProperty(ref _updateTime, value); }
         }
