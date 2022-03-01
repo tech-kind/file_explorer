@@ -18,7 +18,7 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
                 <Setter Property="Background" Value="{DynamicResource ControlFillColorTransparentBrush}" />
                 <Setter Property="Height" Value="40" />
-                <Setter Property="Margin" Value="20,0,-1,0" />
+                <Setter Property="Margin" Value="20,0,0,0" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type ToggleButton}">
@@ -107,11 +107,12 @@
                 Tag="{x:Static wpfuiCommon:Icon.Settings20}" />
         </StackPanel>
 
-        <StackPanel
+        <DockPanel
             Grid.Row="1"
             Grid.Column="1"
-            Background="{DynamicResource ControlFillColorDefaultBrush}">
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            LastChildFill="True">
             <ContentControl Margin="10" prism:RegionManager.RegionName="ContentRegion" />
-        </StackPanel>
+        </DockPanel>
     </Grid>
 </Window>

@@ -6,7 +6,12 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using WPFUI.Common;
 
 namespace FileExplorer.ViewModels.Menu
 {
@@ -36,6 +41,9 @@ namespace FileExplorer.ViewModels.Menu
         private ObservableCollection<FileDirectoryContent> _fileDirectoryCollection
             = new ObservableCollection<FileDirectoryContent>();
 
+        /// <summary>
+        /// 現在のディレクトリに位置するファイル/ディレクトリの一覧
+        /// </summary>
         public ObservableCollection<FileDirectoryContent> FileDirectoryCollection
         {
             get { return _fileDirectoryCollection; }
@@ -45,6 +53,9 @@ namespace FileExplorer.ViewModels.Menu
         private List<object> _fileDirectorySelectedCollection
             = new List<object>();
 
+        /// <summary>
+        /// 選択されているファイル/ディレクトリの一覧
+        /// </summary>
         public List<object> FileDirectorySelectedCollection
         {
             get { return _fileDirectorySelectedCollection; }
@@ -55,11 +66,31 @@ namespace FileExplorer.ViewModels.Menu
             }
         }
 
+        /// <summary>
+        /// 子ディレクトリへの移動コマンド
+        /// </summary>
+        public DelegateCommand ChangeChildDirectoryCommand { get; private set; }
+
+        /// <summary>
+        /// 親ディレクトリへの移動コマンド
+        /// </summary>
+        public DelegateCommand ChangeParentDirectoryCommand { get; private set; }
+
+        public DelegateCommand<DataGridBeginningEditEventArgs> BeginningEditCommand { get; private set; }
+
         public HomeViewModel()
         {
+            ChangeChildDirectoryCommand = new DelegateCommand(ChangeToChildDirectory);
+            ChangeParentDirectoryCommand = new DelegateCommand(ChangeToParentDirectory);
+            BeginningEditCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(BeginningEdit);
+
             CurrentPath = new DirectoryInfo(@"C:\projects\Example\interprocess_sample").FullName;
+
         }
 
+        /// <summary>
+        /// 現在のディレクトリ内のファイル/ディレクトリの取得
+        /// </summary>
         private void SetCurrentDirectoryContents()
         {
             if (CurrentPath == null) return;
@@ -74,8 +105,9 @@ namespace FileExplorer.ViewModels.Menu
                 FileDirectoryContent content = new()
                 {
                     IsSelected = false,
+                    Icon = Icon.Folder20,
                     Name = info.Name,
-                    Type = "Directry",
+                    Type = "フォルダー",
                     UpdateTime = info.LastWriteTime.ToString("yyyy/MM/dd HH:mm")
                 };
                 FileDirectoryCollection.Add(content);
@@ -89,14 +121,18 @@ namespace FileExplorer.ViewModels.Menu
                 FileDirectoryContent content = new()
                 {
                     IsSelected = false,
+                    Icon = Icon.Document20,
                     Name = info.Name,
-                    Type = "File",
+                    Type = "ファイル",
                     UpdateTime = info.LastWriteTime.ToString("yyyy/MM/dd HH:mm")
                 };
                 FileDirectoryCollection.Add(content);
             }
         }
 
+        /// <summary>
+        /// 選択状態の更新
+        /// </summary>
         private void IsSelectedUpdate()
         {
             foreach (var file in FileDirectoryCollection)
@@ -118,6 +154,51 @@ namespace FileExplorer.ViewModels.Menu
                 }
             }
         }
+
+        /// <summary>
+        /// 子ディレクトリの移動
+        /// </summary>
+        private void ChangeToChildDirectory()
+        {
+            if (CurrentPath == null) return;
+            if (FileDirectorySelectedCollection.Count != 1) return;
+
+            var select = FileDirectorySelectedCollection[0] as FileDirectoryContent;
+            if (select == null || select.Name == null) return;
+            if (select.Type == "ファイル") return;
+            var path = Path.Combine(CurrentPath, select.Name);
+            CurrentPath = path;
+        }
+
+        /// <summary>
+        /// 親ディレクトリへの移動
+        /// </summary>
+        private void ChangeToParentDirectory()
+        {
+            if (CurrentPath == null) return;
+            var info = new DirectoryInfo(CurrentPath);
+
+            if (info.Parent == null) return;
+            var path = info.Parent.FullName;
+            CurrentPath = path;
+        }
+
+        private void BeginningEdit(DataGridBeginningEditEventArgs e)
+        {
+            var editingEventArgs = e.EditingEventArgs as MouseButtonEventArgs;
+            
+            if (editingEventArgs == null) return;
+
+            if (editingEventArgs.ClickCount == 1)
+            {
+                e.Cancel = false;
+            }
+            if (editingEventArgs.ClickCount > 1)
+            {
+                e.Cancel = true;
+                ChangeToChildDirectory();
+            }
+        }
     }
 
     public class FileDirectoryContent : BindableBase
@@ -130,6 +211,16 @@ namespace FileExplorer.ViewModels.Menu
         {
             get { return _isSelected; }
             set { SetProperty(ref _isSelected, value); }
+        }
+
+        private Icon _icon;
+        /// <summary>
+        /// アイコン
+        /// </summary>
+        public Icon Icon
+        {
+            get { return _icon; }
+            set { SetProperty(ref _icon, value); }
         }
 
         private string? _name;
