@@ -1,22 +1,25 @@
-﻿using Prism.Commands;
+﻿using FileExplorer.Events;
+using FileExplorer.Models;
+using Prism.Commands;
+using Prism.Events;
 using Prism.Mvvm;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using WPFUI.Common;
 
 namespace FileExplorer.ViewModels.Menu
 {
     public class HomeViewModel : BindableBase
     {
+        private IEventAggregator _ea;
+        private DispatcherTimer _timer;
+
         private DirectoryInfo? _currentPath;
 
         /// <summary>
@@ -76,16 +79,23 @@ namespace FileExplorer.ViewModels.Menu
         /// </summary>
         public DelegateCommand ChangeParentDirectoryCommand { get; private set; }
 
-        public DelegateCommand<DataGridBeginningEditEventArgs> BeginningEditCommand { get; private set; }
+        /// <summary>
+        /// ファイル/ディレクトリ名クリック時コマンド
+        /// </summary>
+        public DelegateCommand<DataGridBeginningEditEventArgs> FileDirectoryNameClickCommand { get; private set; }
 
-        public HomeViewModel()
+        public HomeViewModel(IEventAggregator ea)
         {
+            _ea = ea;
             ChangeChildDirectoryCommand = new DelegateCommand(ChangeToChildDirectory);
             ChangeParentDirectoryCommand = new DelegateCommand(ChangeToParentDirectory);
-            BeginningEditCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(BeginningEdit);
+            FileDirectoryNameClickCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(ConfirmBeginEdit);
 
             CurrentPath = new DirectoryInfo(@"C:\projects\Example\interprocess_sample").FullName;
 
+            _timer = new();
+            _timer.Interval = new TimeSpan(0, 0, 0, 0, 500);
+            _timer.Tick += new EventHandler(EnableBeginEdit);
         }
 
         /// <summary>
@@ -183,74 +193,43 @@ namespace FileExplorer.ViewModels.Menu
             CurrentPath = path;
         }
 
-        private void BeginningEdit(DataGridBeginningEditEventArgs e)
+        /// <summary>
+        /// 編集モードに移行してよいか検証
+        /// </summary>
+        /// <param name="e"></param>
+        private void ConfirmBeginEdit(DataGridBeginningEditEventArgs e)
         {
             var editingEventArgs = e.EditingEventArgs as MouseButtonEventArgs;
-            
+
             if (editingEventArgs == null) return;
 
+            // クリック1回だけの場合は、一旦キャンセルして
+            // 一定時間内にダブルクリックされないか確認する
             if (editingEventArgs.ClickCount == 1)
             {
-                e.Cancel = false;
-            }
-            if (editingEventArgs.ClickCount > 1)
-            {
+                _timer.Start();
                 e.Cancel = true;
+            }
+            // ダブルクリック時は子ディレクトリへの移動を優先
+            // 編集モードへは移行しない
+            else if (editingEventArgs.ClickCount > 1)
+            {
+                _timer.Stop();
                 ChangeToChildDirectory();
+                e.Cancel = true;
             }
         }
-    }
 
-    public class FileDirectoryContent : BindableBase
-    {
-        private bool _isSelected;
         /// <summary>
-        /// 選択状態
+        /// 編集モードへ移行
         /// </summary>
-        public bool IsSelected
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void EnableBeginEdit(object? sender, EventArgs e)
         {
-            get { return _isSelected; }
-            set { SetProperty(ref _isSelected, value); }
-        }
+            _ea.GetEvent<BeginEditEvent>().Publish();
 
-        private Icon _icon;
-        /// <summary>
-        /// アイコン
-        /// </summary>
-        public Icon Icon
-        {
-            get { return _icon; }
-            set { SetProperty(ref _icon, value); }
-        }
-
-        private string? _name;
-        /// <summary>
-        /// ファイルorディレクトリ名
-        /// </summary>
-        public string? Name
-        {
-            get { return _name; }
-            set { SetProperty(ref _name, value); }
-        }
-
-        private string? _type;
-        /// <summary>
-        /// 種別
-        /// </summary>
-        public string? Type
-        {
-            get { return _type; }
-            set { SetProperty(ref _type, value); }
-        }
-
-        private string? _updateTime;
-        /// <summary>
-        /// 更新日時
-        /// </summary>
-        public string? UpdateTime
-        {
-            get { return _updateTime; }
-            set { SetProperty(ref _updateTime, value); }
+            _timer.Stop();
         }
     }
 }

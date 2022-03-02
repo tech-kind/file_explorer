@@ -11,7 +11,7 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40" />
+            <RowDefinition Height="50" />
             <RowDefinition Height="55" />
             <RowDefinition />
         </Grid.RowDefinitions>
@@ -109,6 +109,7 @@
         </Grid>
 
         <DataGrid
+            x:Name="FileDirectoryDataGrid"
             Grid.Row="2"
             Margin="0,10,0,0"
             AutoGenerateColumns="False"
@@ -186,6 +187,9 @@
                             <Setter Property="Foreground" Value="Black" />
                             <Setter Property="BorderThickness" Value="0" />
                         </Trigger>
+                        <Trigger Property="IsEditing" Value="True">
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                        </Trigger>
                     </Style.Triggers>
                 </Style>
             </DataGrid.CellStyle>
@@ -206,7 +210,7 @@
             </i:Interaction.Behaviors>
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="BeginningEdit">
-                    <prism:InvokeCommandAction Command="{Binding BeginningEditCommand}" />
+                    <prism:InvokeCommandAction Command="{Binding FileDirectoryNameClickCommand}" />
                 </i:EventTrigger>
             </i:Interaction.Triggers>
             <DataGrid.InputBindings>
