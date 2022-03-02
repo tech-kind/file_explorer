@@ -1,4 +1,6 @@
-﻿using System;
+﻿using FileExplorer.Events;
+using Prism.Events;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,9 +22,19 @@ namespace FileExplorer.Views.Menu
     /// </summary>
     public partial class HomeView : UserControl
     {
-        public HomeView()
+        private IEventAggregator _ea;
+
+        public HomeView(IEventAggregator ea)
         {
             InitializeComponent();
+
+            _ea = ea;
+            _ea.GetEvent<BeginEditEvent>().Subscribe(BeginEdit);
+        }
+
+        private void BeginEdit()
+        {
+            FileDirectoryDataGrid.BeginEdit();
         }
     }
 }
