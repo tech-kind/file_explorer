@@ -40,7 +40,8 @@
                     Margin="5"
                     Padding="0,5"
                     Background="Transparent"
-                    BorderThickness="0">
+                    BorderThickness="0"
+                    Command="{Binding UndoCommand}">
                     <Button.Content>
                         <wpfui:Icon Glyph="ArrowLeft20" />
                     </Button.Content>

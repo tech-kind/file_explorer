@@ -22,6 +22,9 @@ namespace FileExplorer.ViewModels.Menu
 
         private DirectoryInfo? _currentPath;
 
+        private Stack<DirectoryInfo> _directoryUndo = new Stack<DirectoryInfo>();
+        private Stack<DirectoryInfo> _directoryRedo = new Stack<DirectoryInfo>();
+
         /// <summary>
         /// 現在のディレクトリ
         /// </summary>
@@ -36,6 +39,14 @@ namespace FileExplorer.ViewModels.Menu
             {
                 if (value == null) return;
                 var path = new DirectoryInfo(value);
+                if (_currentPath != null)
+                {
+                    if (_directoryRedo.Count == 0 || _directoryRedo.Peek().FullName != path.FullName)
+                    {
+                        _directoryUndo.Push(_currentPath);
+                        CanUndo = true;
+                    }
+                }
                 SetProperty(ref _currentPath, path);
                 SetCurrentDirectoryContents();
             }
@@ -84,12 +95,30 @@ namespace FileExplorer.ViewModels.Menu
         /// </summary>
         public DelegateCommand<DataGridBeginningEditEventArgs> FileDirectoryNameClickCommand { get; private set; }
 
+        /// <summary>
+        /// Undoコマンド
+        /// </summary>
+        public DelegateCommand UndoCommand { get; private set; }
+
+        private bool _canUndo = false;
+
+        /// <summary>
+        /// Undo可能かどうか
+        /// </summary>
+        public bool CanUndo
+        {
+            get { return _canUndo; }
+            set { SetProperty(ref _canUndo, value); }
+        }
+
+
         public HomeViewModel(IEventAggregator ea)
         {
             _ea = ea;
             ChangeChildDirectoryCommand = new DelegateCommand(ChangeToChildDirectory);
             ChangeParentDirectoryCommand = new DelegateCommand(ChangeToParentDirectory);
             FileDirectoryNameClickCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(ConfirmBeginEdit);
+            UndoCommand = new DelegateCommand(Undo).ObservesCanExecute(() => CanUndo);
 
             CurrentPath = new DirectoryInfo(@"C:\projects\Example\interprocess_sample").FullName;
 
@@ -230,6 +259,20 @@ namespace FileExplorer.ViewModels.Menu
             _ea.GetEvent<BeginEditEvent>().Publish();
 
             _timer.Stop();
+        }
+
+        /// <summary>
+        /// Undo
+        /// </summary>
+        private void Undo()
+        {
+            var path = _directoryUndo.Pop();
+            _directoryRedo.Push(path);
+
+            CanUndo = (_directoryUndo.Count > 0);
+
+            if (path == null) return;
+            CurrentPath = path.FullName;
         }
     }
 }
