@@ -17,13 +17,13 @@ namespace FileExplorer.ViewModels.Menu
 {
     public class HomeViewModel : BindableBase
     {
-        private IEventAggregator _ea;
-        private DispatcherTimer _timer;
+        private readonly IEventAggregator _ea;
+        private readonly DispatcherTimer _timer;
 
         private DirectoryInfo? _currentPath;
 
-        private Stack<DirectoryInfo> _directoryUndo = new Stack<DirectoryInfo>();
-        private Stack<DirectoryInfo> _directoryRedo = new Stack<DirectoryInfo>();
+        private readonly Stack<DirectoryInfo> _directoryUndo = new ();
+        private readonly Stack<DirectoryInfo> _directoryRedo = new ();
 
         /// <summary>
         /// 現在のディレクトリ
@@ -57,7 +57,7 @@ namespace FileExplorer.ViewModels.Menu
         }
 
         private ObservableCollection<FileDirectoryContent> _fileDirectoryCollection
-            = new ObservableCollection<FileDirectoryContent>();
+            = new ();
 
         /// <summary>
         /// 現在のディレクトリに位置するファイル/ディレクトリの一覧
@@ -69,7 +69,7 @@ namespace FileExplorer.ViewModels.Menu
         }
 
         private List<object> _fileDirectorySelectedCollection
-            = new List<object>();
+            = new ();
 
         /// <summary>
         /// 選択されているファイル/ディレクトリの一覧
@@ -178,7 +178,7 @@ namespace FileExplorer.ViewModels.Menu
             var directories = Directory.GetDirectories(CurrentPath, "*", SearchOption.TopDirectoryOnly);
             foreach (var d in directories)
             {
-                DirectoryInfo info = new DirectoryInfo(d);
+                DirectoryInfo info = new (d);
                 FileDirectoryContent content = new()
                 {
                     IsSelected = false,
@@ -194,7 +194,7 @@ namespace FileExplorer.ViewModels.Menu
             var files = Directory.GetFiles(CurrentPath, "*", SearchOption.TopDirectoryOnly);
             foreach (var f in files)
             {
-                FileInfo info = new FileInfo(f);
+                FileInfo info = new (f);
                 FileDirectoryContent content = new()
                 {
                     IsSelected = false,
@@ -219,8 +219,7 @@ namespace FileExplorer.ViewModels.Menu
 
             foreach (var selectFile in FileDirectorySelectedCollection)
             {
-                var castSelect = selectFile as FileDirectoryContent;
-                if (castSelect == null)
+                if (selectFile is not FileDirectoryContent castSelect)
                 {
                     continue;
                 }
@@ -240,8 +239,7 @@ namespace FileExplorer.ViewModels.Menu
             if (CurrentPath == null) return;
             if (FileDirectorySelectedCollection.Count != 1) return;
 
-            var select = FileDirectorySelectedCollection[0] as FileDirectoryContent;
-            if (select == null || select.Name == null) return;
+            if (FileDirectorySelectedCollection[0] is not FileDirectoryContent select || select.Name == null) return;
             if (select.Type == "ファイル") return;
             var path = Path.Combine(CurrentPath, select.Name);
             CurrentPath = path;
@@ -266,9 +264,7 @@ namespace FileExplorer.ViewModels.Menu
         /// <param name="e"></param>
         private void ConfirmBeginEdit(DataGridBeginningEditEventArgs e)
         {
-            var editingEventArgs = e.EditingEventArgs as MouseButtonEventArgs;
-
-            if (editingEventArgs == null) return;
+            if (e.EditingEventArgs is not MouseButtonEventArgs editingEventArgs) return;
 
             // クリック1回だけの場合は、一旦キャンセルして
             // 一定時間内にダブルクリックされないか確認する
