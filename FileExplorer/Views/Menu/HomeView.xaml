@@ -51,7 +51,8 @@
                     Margin="0,5,5,5"
                     Padding="0,5"
                     Background="Transparent"
-                    BorderThickness="0">
+                    BorderThickness="0"
+                    Command="{Binding RedoCommand}">
                     <StackPanel>
                         <wpfui:Icon Glyph="ArrowRight20" />
                     </StackPanel>

@@ -41,7 +41,10 @@ namespace FileExplorer.ViewModels.Menu
                 var path = new DirectoryInfo(value);
                 if (_currentPath != null)
                 {
-                    if (_directoryRedo.Count == 0 || _directoryRedo.Peek().FullName != path.FullName)
+                    // Redoの先頭と今のディレクトリが同じ場合は、
+                    // Undoに加えない
+                    if (_directoryRedo.Count == 0 
+                        || _directoryRedo.Peek().FullName != _currentPath.FullName)
                     {
                         _directoryUndo.Push(_currentPath);
                         CanUndo = true;
@@ -111,6 +114,21 @@ namespace FileExplorer.ViewModels.Menu
             set { SetProperty(ref _canUndo, value); }
         }
 
+        /// <summary>
+        /// Redoコマンド
+        /// </summary>
+        public DelegateCommand RedoCommand { get; private set; }
+
+        private bool _canRedo = false;
+
+        /// <summary>
+        /// Redo可能かどうか
+        /// </summary>
+        public bool CanRedo
+        {
+            get { return _canRedo; }
+            set { SetProperty(ref _canRedo, value); }
+        }
 
         public HomeViewModel(IEventAggregator ea)
         {
@@ -119,6 +137,7 @@ namespace FileExplorer.ViewModels.Menu
             ChangeParentDirectoryCommand = new DelegateCommand(ChangeToParentDirectory);
             FileDirectoryNameClickCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(ConfirmBeginEdit);
             UndoCommand = new DelegateCommand(Undo).ObservesCanExecute(() => CanUndo);
+            RedoCommand = new DelegateCommand(Redo).ObservesCanExecute(() => CanRedo);
 
             CurrentPath = new DirectoryInfo(@"C:\projects\Example\interprocess_sample").FullName;
 
@@ -267,9 +286,26 @@ namespace FileExplorer.ViewModels.Menu
         private void Undo()
         {
             var path = _directoryUndo.Pop();
-            _directoryRedo.Push(path);
+            if (_currentPath != null)
+            {
+                _directoryRedo.Push(_currentPath);
+            }
 
             CanUndo = (_directoryUndo.Count > 0);
+            CanRedo = true;
+
+            if (path == null) return;
+            CurrentPath = path.FullName;
+        }
+
+        /// <summary>
+        /// Redo
+        /// </summary>
+        private void Redo()
+        {
+            var path = _directoryRedo.Pop();
+
+            CanRedo = (_directoryRedo.Count > 0);
 
             if (path == null) return;
             CurrentPath = path.FullName;
