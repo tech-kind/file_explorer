@@ -63,7 +63,8 @@
                     Padding="0,5"
                     Background="Transparent"
                     BorderThickness="0"
-                    Command="{Binding ChangeParentDirectoryCommand}">
+                    Command="{Binding ChangeParentDirectoryCommand}"
+                    IsEnabled="{Binding IsExistParent}">
                     <StackPanel>
                         <wpfui:Icon Glyph="ArrowUp20" />
                     </StackPanel>
@@ -89,7 +90,17 @@
                         Margin="0,5"
                         Text="{Binding CurrentPath}" />
                     <wpfui:Icon Grid.Column="2" Glyph="ChevronDown20" />
-                    <wpfui:Icon Grid.Column="3" Glyph="ArrowClockwise20" />
+                    <Button
+                        Grid.Column="3"
+                        Margin="0,5,5,5"
+                        Padding="0,5"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Command="{Binding RefreshCommand}">
+                        <StackPanel>
+                            <wpfui:Icon Glyph="ArrowClockwise20" />
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Border>
 

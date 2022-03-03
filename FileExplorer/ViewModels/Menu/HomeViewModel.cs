@@ -51,6 +51,7 @@ namespace FileExplorer.ViewModels.Menu
                     }
                 }
                 SetProperty(ref _currentPath, path);
+                IsExistParent = path.Parent != null;
                 SetCurrentDirectoryContents();
             }
         }
@@ -99,6 +100,11 @@ namespace FileExplorer.ViewModels.Menu
         public DelegateCommand<DataGridBeginningEditEventArgs> FileDirectoryNameClickCommand { get; private set; }
 
         /// <summary>
+        /// 更新コマンド
+        /// </summary>
+        public DelegateCommand RefreshCommand { get; private set; }
+
+        /// <summary>
         /// Undoコマンド
         /// </summary>
         public DelegateCommand UndoCommand { get; private set; }
@@ -130,6 +136,18 @@ namespace FileExplorer.ViewModels.Menu
             set { SetProperty(ref _canRedo, value); }
         }
 
+        private bool _isExistParent;
+
+        /// <summary>
+        /// 親ディレクトリが存在するかどうか
+        /// </summary>
+        public bool IsExistParent
+        {
+            get { return _isExistParent; }
+            set { SetProperty(ref _isExistParent, value); }
+        }
+
+
         public HomeViewModel(IEventAggregator ea)
         {
             _ea = ea;
@@ -138,8 +156,9 @@ namespace FileExplorer.ViewModels.Menu
             FileDirectoryNameClickCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(ConfirmBeginEdit);
             UndoCommand = new DelegateCommand(Undo).ObservesCanExecute(() => CanUndo);
             RedoCommand = new DelegateCommand(Redo).ObservesCanExecute(() => CanRedo);
+            RefreshCommand = new DelegateCommand(SetCurrentDirectoryContents);
 
-            CurrentPath = new DirectoryInfo(@"C:\projects\Example\interprocess_sample").FullName;
+            CurrentPath = new DirectoryInfo(@"C:\projects\Example").FullName;
 
             _timer = new();
             _timer.Interval = new TimeSpan(0, 0, 0, 0, 500);
