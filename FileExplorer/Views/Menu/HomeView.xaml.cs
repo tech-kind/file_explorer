@@ -1,9 +1,11 @@
-﻿using FileExplorer.Events;
+﻿using MessagePipe;
+using Microsoft.Extensions.DependencyInjection;
 using Prism.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,19 +24,20 @@ namespace FileExplorer.Views.Menu
     /// </summary>
     public partial class HomeView : UserControl
     {
-        private IEventAggregator _ea;
+        private readonly IAsyncSubscriber<string, string> _beginEditSubscriber;
 
-        public HomeView(IEventAggregator ea)
+        public HomeView(IServiceProvider serviceProvider)
         {
             InitializeComponent();
 
-            _ea = ea;
-            _ea.GetEvent<BeginEditEvent>().Subscribe(BeginEdit);
+            _beginEditSubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
+            _beginEditSubscriber.Subscribe("/home_view/begin_edit", BeginEdit);
         }
 
-        private void BeginEdit()
+        private ValueTask BeginEdit(string message, CancellationToken token)
         {
             FileDirectoryDataGrid.BeginEdit();
+            return ValueTask.CompletedTask;
         }
     }
 }

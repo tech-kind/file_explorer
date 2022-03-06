@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MessagePipe" Version="1.7.1" />
     <PackageReference Include="Prism.Unity" Version="8.1.97" />
     <PackageReference Include="WPF-UI" Version="1.2.1" />
   </ItemGroup>

@@ -1,5 +1,6 @@
-﻿using FileExplorer.Events;
-using FileExplorer.Models;
+﻿using FileExplorer.Models;
+using MessagePipe;
+using Microsoft.Extensions.DependencyInjection;
 using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
@@ -8,6 +9,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -17,47 +20,13 @@ namespace FileExplorer.ViewModels.Menu
 {
     public class HomeViewModel : BindableBase
     {
-        private readonly IEventAggregator _ea;
         private readonly DispatcherTimer _timer;
-
-        private DirectoryInfo? _currentPath;
-
-        private readonly Stack<DirectoryInfo> _directoryUndo = new ();
-        private readonly Stack<DirectoryInfo> _directoryRedo = new ();
-
-        /// <summary>
-        /// 現在のディレクトリ
-        /// </summary>
-        public string? CurrentPath
-        {
-            get
-            {
-                if (_currentPath == null) return string.Empty;
-                return _currentPath.FullName;
-            }
-            set
-            {
-                if (value == null) return;
-                var path = new DirectoryInfo(value);
-                if (_currentPath != null)
-                {
-                    // Redoの先頭と今のディレクトリが同じ場合は、
-                    // Undoに加えない
-                    if (_directoryRedo.Count == 0 
-                        || _directoryRedo.Peek().FullName != _currentPath.FullName)
-                    {
-                        _directoryUndo.Push(_currentPath);
-                        CanUndo = true;
-                    }
-                }
-                SetProperty(ref _currentPath, path);
-                IsExistParent = path.Parent != null;
-                SetCurrentDirectoryContents();
-            }
-        }
+        private readonly IAsyncPublisher<string, string> _beginEditPublisher;
+        private readonly IAsyncPublisher<string, string> _changeChildDirectoryPublisher;
+        private readonly IAsyncSubscriber<string, string> _currentDirectorySubscriber;
 
         private ObservableCollection<FileDirectoryContent> _fileDirectoryCollection
-            = new ();
+            = new();
 
         /// <summary>
         /// 現在のディレクトリに位置するファイル/ディレクトリの一覧
@@ -69,7 +38,7 @@ namespace FileExplorer.ViewModels.Menu
         }
 
         private List<object> _fileDirectorySelectedCollection
-            = new ();
+            = new();
 
         /// <summary>
         /// 選択されているファイル/ディレクトリの一覧
@@ -90,75 +59,18 @@ namespace FileExplorer.ViewModels.Menu
         public DelegateCommand ChangeChildDirectoryCommand { get; private set; }
 
         /// <summary>
-        /// 親ディレクトリへの移動コマンド
-        /// </summary>
-        public DelegateCommand ChangeParentDirectoryCommand { get; private set; }
-
-        /// <summary>
         /// ファイル/ディレクトリ名クリック時コマンド
         /// </summary>
         public DelegateCommand<DataGridBeginningEditEventArgs> FileDirectoryNameClickCommand { get; private set; }
 
-        /// <summary>
-        /// 更新コマンド
-        /// </summary>
-        public DelegateCommand RefreshCommand { get; private set; }
-
-        /// <summary>
-        /// Undoコマンド
-        /// </summary>
-        public DelegateCommand UndoCommand { get; private set; }
-
-        private bool _canUndo = false;
-
-        /// <summary>
-        /// Undo可能かどうか
-        /// </summary>
-        public bool CanUndo
+        public HomeViewModel(IServiceProvider serviceProvider)
         {
-            get { return _canUndo; }
-            set { SetProperty(ref _canUndo, value); }
-        }
-
-        /// <summary>
-        /// Redoコマンド
-        /// </summary>
-        public DelegateCommand RedoCommand { get; private set; }
-
-        private bool _canRedo = false;
-
-        /// <summary>
-        /// Redo可能かどうか
-        /// </summary>
-        public bool CanRedo
-        {
-            get { return _canRedo; }
-            set { SetProperty(ref _canRedo, value); }
-        }
-
-        private bool _isExistParent;
-
-        /// <summary>
-        /// 親ディレクトリが存在するかどうか
-        /// </summary>
-        public bool IsExistParent
-        {
-            get { return _isExistParent; }
-            set { SetProperty(ref _isExistParent, value); }
-        }
-
-
-        public HomeViewModel(IEventAggregator ea)
-        {
-            _ea = ea;
+            _beginEditPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
+            _currentDirectorySubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
+            _currentDirectorySubscriber.Subscribe("/home_view/current_directory", SetCurrentDirectoryContents);
+            _changeChildDirectoryPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
             ChangeChildDirectoryCommand = new DelegateCommand(ChangeToChildDirectory);
-            ChangeParentDirectoryCommand = new DelegateCommand(ChangeToParentDirectory);
             FileDirectoryNameClickCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(ConfirmBeginEdit);
-            UndoCommand = new DelegateCommand(Undo).ObservesCanExecute(() => CanUndo);
-            RedoCommand = new DelegateCommand(Redo).ObservesCanExecute(() => CanRedo);
-            RefreshCommand = new DelegateCommand(SetCurrentDirectoryContents);
-
-            CurrentPath = new DirectoryInfo(@"C:\projects\Example").FullName;
 
             _timer = new();
             _timer.Interval = new TimeSpan(0, 0, 0, 0, 500);
@@ -168,17 +80,15 @@ namespace FileExplorer.ViewModels.Menu
         /// <summary>
         /// 現在のディレクトリ内のファイル/ディレクトリの取得
         /// </summary>
-        private void SetCurrentDirectoryContents()
+        private ValueTask SetCurrentDirectoryContents(string path, CancellationToken token)
         {
-            if (CurrentPath == null) return;
-
             FileDirectoryCollection.Clear();
 
             // ディレクトリの取得
-            var directories = Directory.GetDirectories(CurrentPath, "*", SearchOption.TopDirectoryOnly);
+            var directories = Directory.GetDirectories(path, "*", SearchOption.TopDirectoryOnly);
             foreach (var d in directories)
             {
-                DirectoryInfo info = new (d);
+                DirectoryInfo info = new(d);
                 FileDirectoryContent content = new()
                 {
                     IsSelected = false,
@@ -191,10 +101,10 @@ namespace FileExplorer.ViewModels.Menu
             }
 
             // ファイルの取得
-            var files = Directory.GetFiles(CurrentPath, "*", SearchOption.TopDirectoryOnly);
+            var files = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly);
             foreach (var f in files)
             {
-                FileInfo info = new (f);
+                FileInfo info = new(f);
                 FileDirectoryContent content = new()
                 {
                     IsSelected = false,
@@ -205,6 +115,8 @@ namespace FileExplorer.ViewModels.Menu
                 };
                 FileDirectoryCollection.Add(content);
             }
+
+            return ValueTask.CompletedTask;
         }
 
         /// <summary>
@@ -234,28 +146,13 @@ namespace FileExplorer.ViewModels.Menu
         /// <summary>
         /// 子ディレクトリの移動
         /// </summary>
-        private void ChangeToChildDirectory()
+        private async void ChangeToChildDirectory()
         {
-            if (CurrentPath == null) return;
             if (FileDirectorySelectedCollection.Count != 1) return;
 
             if (FileDirectorySelectedCollection[0] is not FileDirectoryContent select || select.Name == null) return;
             if (select.Type == "ファイル") return;
-            var path = Path.Combine(CurrentPath, select.Name);
-            CurrentPath = path;
-        }
-
-        /// <summary>
-        /// 親ディレクトリへの移動
-        /// </summary>
-        private void ChangeToParentDirectory()
-        {
-            if (CurrentPath == null) return;
-            var info = new DirectoryInfo(CurrentPath);
-
-            if (info.Parent == null) return;
-            var path = info.Parent.FullName;
-            CurrentPath = path;
+            await _changeChildDirectoryPublisher.PublishAsync("/home_view/change_child_directory", select.Name);
         }
 
         /// <summary>
@@ -288,42 +185,11 @@ namespace FileExplorer.ViewModels.Menu
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void EnableBeginEdit(object? sender, EventArgs e)
+        private async void EnableBeginEdit(object? sender, EventArgs e)
         {
-            _ea.GetEvent<BeginEditEvent>().Publish();
+            await _beginEditPublisher.PublishAsync("/home_view/begin_edit", "");
 
             _timer.Stop();
-        }
-
-        /// <summary>
-        /// Undo
-        /// </summary>
-        private void Undo()
-        {
-            var path = _directoryUndo.Pop();
-            if (_currentPath != null)
-            {
-                _directoryRedo.Push(_currentPath);
-            }
-
-            CanUndo = (_directoryUndo.Count > 0);
-            CanRedo = true;
-
-            if (path == null) return;
-            CurrentPath = path.FullName;
-        }
-
-        /// <summary>
-        /// Redo
-        /// </summary>
-        private void Redo()
-        {
-            var path = _directoryRedo.Pop();
-
-            CanRedo = (_directoryRedo.Count > 0);
-
-            if (path == null) return;
-            CurrentPath = path.FullName;
         }
     }
 }

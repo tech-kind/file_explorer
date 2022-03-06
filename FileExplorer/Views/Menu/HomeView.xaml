@@ -5,6 +5,7 @@
     xmlns:behavior="clr-namespace:FileExplorer.Behavior"
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:prism="http://prismlibrary.com/"
+    xmlns:region="clr-namespace:FileExplorer.Views.Region"
     xmlns:wpfui="clr-namespace:WPFUI.Controls;assembly=WPFUI"
     xmlns:wpfuiCommon="clr-namespace:WPFUI.Common;assembly=WPFUI"
     prism:ViewModelLocator.AutoWireViewModel="True">
@@ -28,98 +29,7 @@
             <MenuItem Header="並び替え" Icon="{x:Static wpfuiCommon:Icon.ArrowSort20}" />
         </Menu>
 
-        <Grid Grid.Row="1" Margin="0,5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140" />
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal">
-                <Button
-                    Width="40"
-                    Margin="5"
-                    Padding="0,5"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Command="{Binding UndoCommand}">
-                    <Button.Content>
-                        <wpfui:Icon Glyph="ArrowLeft20" />
-                    </Button.Content>
-                </Button>
-                <Button
-                    Width="40"
-                    Margin="0,5,5,5"
-                    Padding="0,5"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Command="{Binding RedoCommand}">
-                    <StackPanel>
-                        <wpfui:Icon Glyph="ArrowRight20" />
-                    </StackPanel>
-                </Button>
-                <Button
-                    Width="40"
-                    Margin="0,5,5,5"
-                    Padding="0,5"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Command="{Binding ChangeParentDirectoryCommand}"
-                    IsEnabled="{Binding IsExistParent}">
-                    <StackPanel>
-                        <wpfui:Icon Glyph="ArrowUp20" />
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-
-            <Border
-                Grid.Column="1"
-                Margin="5,0"
-                BorderBrush="DarkGray"
-                BorderThickness="1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="40" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="40" />
-                        <ColumnDefinition Width="40" />
-                    </Grid.ColumnDefinitions>
-
-                    <wpfui:Icon Glyph="Folder20" />
-                    <TextBox
-                        Grid.Column="1"
-                        Margin="0,5"
-                        Text="{Binding CurrentPath}" />
-                    <wpfui:Icon Grid.Column="2" Glyph="ChevronDown20" />
-                    <Button
-                        Grid.Column="3"
-                        Margin="0,5,5,5"
-                        Padding="0,5"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Command="{Binding RefreshCommand}">
-                        <StackPanel>
-                            <wpfui:Icon Glyph="ArrowClockwise20" />
-                        </StackPanel>
-                    </Button>
-                </Grid>
-            </Border>
-
-            <Border
-                Grid.Column="2"
-                Margin="5,0"
-                BorderBrush="DarkGray"
-                BorderThickness="1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="40" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <wpfui:Icon Glyph="Search20" />
-                    <TextBox Grid.Column="1" Margin="0,5,5,5" />
-                </Grid>
-            </Border>
-        </Grid>
+        <region:CurrentDirectoryView Grid.Row="1" Margin="0,5" />
 
         <DataGrid
             x:Name="FileDirectoryDataGrid"
