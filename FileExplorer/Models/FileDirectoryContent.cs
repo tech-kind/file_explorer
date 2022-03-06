@@ -81,6 +81,11 @@ namespace FileExplorer.Models
             }
         }
 
+        /// <summary>
+        /// ファイルorディレクトリのフルパス
+        /// </summary>
+        public string? FullName { get; set; }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyname = null)
         {

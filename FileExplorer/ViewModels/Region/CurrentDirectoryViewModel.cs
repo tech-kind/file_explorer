@@ -9,13 +9,14 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static FileExplorer.Utils.TopicName;
 
 namespace FileExplorer.ViewModels.Region
 {
     public class CurrentDirectoryViewModel : BindableBase
     {
         private readonly IAsyncPublisher<string, string> _currentDirectoryPublisher;
-        private readonly IAsyncSubscriber<string, string> _changeChildDirectorySubscriber;
+        private readonly IAsyncSubscriber<string, string> _genericStringSubscriber;
         private readonly Stack<DirectoryInfo> _directoryUndo = new();
         private readonly Stack<DirectoryInfo> _directoryRedo = new();
 
@@ -108,8 +109,9 @@ namespace FileExplorer.ViewModels.Region
         public CurrentDirectoryViewModel(IServiceProvider serviceProvider)
         {
             _currentDirectoryPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
-            _changeChildDirectorySubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
-            _changeChildDirectorySubscriber.Subscribe("/home_view/change_child_directory", ChangeToChiledDirectory);
+            _genericStringSubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
+            _genericStringSubscriber.Subscribe(HomeViewChangeChildDirectory, ChangeToChiledDirectory);
+            _genericStringSubscriber.Subscribe(HomeViewRefreshCurrentDirectory, RefreshCurrentDirectory);
             UndoCommand = new DelegateCommand(Undo).ObservesCanExecute(() => CanUndo);
             RedoCommand = new DelegateCommand(Redo).ObservesCanExecute(() => CanRedo);
             ChangeParentDirectoryCommand = new DelegateCommand(ChangeToParentDirectory);
@@ -163,12 +165,24 @@ namespace FileExplorer.ViewModels.Region
         }
 
         /// <summary>
+        /// 現在のディレクトリの内容を更新
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private ValueTask RefreshCurrentDirectory(string message, CancellationToken token)
+        {
+            CurrentDirectoryPublish();
+            return ValueTask.CompletedTask;
+        }
+
+        /// <summary>
         /// 現在のディレクトリをHomeViewに通知
         /// </summary>
         private async void CurrentDirectoryPublish()
         {
             if (_currentPath == null) return;
-            await _currentDirectoryPublisher.PublishAsync("/home_view/current_directory", _currentPath.FullName);
+            await _currentDirectoryPublisher.PublishAsync(HomeViewCurrentDirectory, _currentPath.FullName);
         }
 
         /// <summary>

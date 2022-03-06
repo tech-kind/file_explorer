@@ -15,14 +15,15 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using WPFUI.Common;
+using static FileExplorer.Utils.TopicName;
 
 namespace FileExplorer.ViewModels.Menu
 {
     public class HomeViewModel : BindableBase
     {
         private readonly DispatcherTimer _timer;
-        private readonly IAsyncPublisher<string, string> _beginEditPublisher;
-        private readonly IAsyncPublisher<string, string> _changeChildDirectoryPublisher;
+        private readonly IAsyncPublisher<string, string> _genericStringPublisher;
+        private readonly IAsyncPublisher<string, List<object>> _selectedObjectPublisher;
         private readonly IAsyncSubscriber<string, string> _currentDirectorySubscriber;
 
         private ObservableCollection<FileDirectoryContent> _fileDirectoryCollection
@@ -65,10 +66,10 @@ namespace FileExplorer.ViewModels.Menu
 
         public HomeViewModel(IServiceProvider serviceProvider)
         {
-            _beginEditPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
+            _genericStringPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
             _currentDirectorySubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
-            _currentDirectorySubscriber.Subscribe("/home_view/current_directory", SetCurrentDirectoryContents);
-            _changeChildDirectoryPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
+            _currentDirectorySubscriber.Subscribe(HomeViewCurrentDirectory, SetCurrentDirectoryContents);
+            _selectedObjectPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, List<object>>>();
             ChangeChildDirectoryCommand = new DelegateCommand(ChangeToChildDirectory);
             FileDirectoryNameClickCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(ConfirmBeginEdit);
 
@@ -95,7 +96,8 @@ namespace FileExplorer.ViewModels.Menu
                     Icon = Icon.Folder20,
                     Name = info.Name,
                     Type = "フォルダー",
-                    UpdateTime = info.LastWriteTime.ToString("yyyy/MM/dd HH:mm")
+                    UpdateTime = info.LastWriteTime.ToString("yyyy/MM/dd HH:mm"),
+                    FullName = info.FullName
                 };
                 FileDirectoryCollection.Add(content);
             }
@@ -111,7 +113,8 @@ namespace FileExplorer.ViewModels.Menu
                     Icon = Icon.Document20,
                     Name = info.Name,
                     Type = "ファイル",
-                    UpdateTime = info.LastWriteTime.ToString("yyyy/MM/dd HH:mm")
+                    UpdateTime = info.LastWriteTime.ToString("yyyy/MM/dd HH:mm"),
+                    FullName= info.FullName
                 };
                 FileDirectoryCollection.Add(content);
             }
@@ -122,7 +125,7 @@ namespace FileExplorer.ViewModels.Menu
         /// <summary>
         /// 選択状態の更新
         /// </summary>
-        private void IsSelectedUpdate()
+        private async void IsSelectedUpdate()
         {
             foreach (var file in FileDirectoryCollection)
             {
@@ -141,6 +144,7 @@ namespace FileExplorer.ViewModels.Menu
                     file.IsSelected = true;
                 }
             }
+            await _selectedObjectPublisher.PublishAsync(HomeViewSelectedChangeObject, _fileDirectorySelectedCollection);
         }
 
         /// <summary>
@@ -152,7 +156,7 @@ namespace FileExplorer.ViewModels.Menu
 
             if (FileDirectorySelectedCollection[0] is not FileDirectoryContent select || select.Name == null) return;
             if (select.Type == "ファイル") return;
-            await _changeChildDirectoryPublisher.PublishAsync("/home_view/change_child_directory", select.Name);
+            await _genericStringPublisher.PublishAsync(HomeViewChangeChildDirectory, select.Name);
         }
 
         /// <summary>
@@ -187,7 +191,7 @@ namespace FileExplorer.ViewModels.Menu
         /// <param name="e"></param>
         private async void EnableBeginEdit(object? sender, EventArgs e)
         {
-            await _beginEditPublisher.PublishAsync("/home_view/begin_edit", "");
+            await _genericStringPublisher.PublishAsync(HomeViewBeginEdit, "");
 
             _timer.Stop();
         }

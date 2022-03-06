@@ -17,17 +17,7 @@
             <RowDefinition />
         </Grid.RowDefinitions>
 
-        <Menu>
-            <MenuItem Header="新規作成" Icon="{x:Static wpfuiCommon:Icon.AddCircle20}" />
-            <Separator />
-            <MenuItem Icon="{x:Static wpfuiCommon:Icon.Cut20}" />
-            <MenuItem Icon="{x:Static wpfuiCommon:Icon.Copy20}" />
-            <MenuItem Icon="{x:Static wpfuiCommon:Icon.ClipboardPaste20}" />
-            <MenuItem Icon="{x:Static wpfuiCommon:Icon.Rename20}" />
-            <MenuItem Icon="{x:Static wpfuiCommon:Icon.Delete20}" />
-            <Separator />
-            <MenuItem Header="並び替え" Icon="{x:Static wpfuiCommon:Icon.ArrowSort20}" />
-        </Menu>
+        <region:FileDirectoryOperatorView />
 
         <region:CurrentDirectoryView Grid.Row="1" Margin="0,5" />
 
