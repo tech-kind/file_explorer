@@ -129,6 +129,15 @@
             <DataGrid.InputBindings>
                 <MouseBinding Command="{Binding ChangeChildDirectoryCommand}" MouseAction="LeftDoubleClick" />
                 <KeyBinding Key="Enter" Command="{Binding ChangeChildDirectoryCommand}" />
+                <KeyBinding Key="Delete" Command="{Binding RemoveCommand}" />
+                <KeyBinding
+                    Key="C"
+                    Command="{Binding CopyCommand}"
+                    Modifiers="Ctrl" />
+                <KeyBinding
+                    Key="V"
+                    Command="{Binding PasteCommand}"
+                    Modifiers="Ctrl" />
             </DataGrid.InputBindings>
         </DataGrid>
     </Grid>

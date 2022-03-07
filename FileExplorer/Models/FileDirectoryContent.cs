@@ -9,7 +9,7 @@ using WPFUI.Common;
 
 namespace FileExplorer.Models
 {
-    public class FileDirectoryContent : INotifyPropertyChanged
+    public abstract class FileDirectoryContent : INotifyPropertyChanged
     {
         private bool _isSelected;
         /// <summary>
@@ -91,5 +91,9 @@ namespace FileExplorer.Models
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyname));
         }
+
+        public abstract void Remove();
+
+        public abstract void Copy(string destDir);
     }
 }

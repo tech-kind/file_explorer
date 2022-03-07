@@ -10,12 +10,20 @@ namespace FileExplorer.Utils
     {
         public const string HomeViewCurrentDirectory = "/home_view/current_directory";
 
-        public const string HomeViewSelectedChangeObject = "/home_view/selected_change_object";
+        public const string HomeViewIsSelectedObject = "/home_view/is_selected_object";
 
         public const string HomeViewChangeChildDirectory = "/home_view/change_child_directory";
 
         public const string HomeViewBeginEdit = "/home_view/begin_edit";
 
-        public const string HomeViewRefreshCurrentDirectory = "/home_view/refresh_current_directory";
+        public const string HomeViewRemoveFileDirectory = "/home_view/remove_file_directory";
+
+        public const string HomeViewCutFileDirectory = "/home_view/cut_file_directory";
+
+        public const string HomeViewCopyFileDirectory = "/home_view/copy_file_directory";
+
+        public const string HomeViewPasteFileDirectory = "/home_view/paste_file_directory";
+
+        public const string HomeViewDataGridFocusable = "/home_view/datagrid_focusable";
     }
 }

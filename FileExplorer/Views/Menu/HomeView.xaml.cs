@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using static FileExplorer.Utils.TopicName;
 
 namespace FileExplorer.Views.Menu
 {
@@ -25,18 +26,31 @@ namespace FileExplorer.Views.Menu
     public partial class HomeView : UserControl
     {
         private readonly IAsyncSubscriber<string, string> _beginEditSubscriber;
+        private readonly IAsyncSubscriber<string, bool> _focusableSubscriber;
 
         public HomeView(IServiceProvider serviceProvider)
         {
             InitializeComponent();
 
             _beginEditSubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
-            _beginEditSubscriber.Subscribe("/home_view/begin_edit", BeginEdit);
+            _beginEditSubscriber.Subscribe(HomeViewBeginEdit, BeginEdit);
+            _focusableSubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, bool>>();
+            _focusableSubscriber.Subscribe(HomeViewDataGridFocusable, DataGridFocusable);
         }
 
         private ValueTask BeginEdit(string message, CancellationToken token)
         {
             FileDirectoryDataGrid.BeginEdit();
+            return ValueTask.CompletedTask;
+        }
+
+        private ValueTask DataGridFocusable(bool focus, CancellationToken token)
+        {
+            if (focus)
+            {
+                FileDirectoryDataGrid.Focus();
+                FileDirectoryDataGrid.SelectedIndex = 0;
+            }
             return ValueTask.CompletedTask;
         }
     }

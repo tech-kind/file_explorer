@@ -16,9 +16,8 @@ namespace FileExplorer.ViewModels.Region
 {
     public class FileDirectoryOperatorViewModel : BindableBase
     {
-        private List<object>? _selectedObject;
         private readonly IAsyncPublisher<string, string> _genericStringPublisher;
-        private readonly IAsyncSubscriber<string, List<object>> _selectObjectSubscriber;
+        private readonly IAsyncSubscriber<string, bool> _selectObjectSubscriber;
 
         private bool _isSelected = false;
 
@@ -58,8 +57,8 @@ namespace FileExplorer.ViewModels.Region
 
         public FileDirectoryOperatorViewModel(IServiceProvider serviceProvider)
         {
-            _selectObjectSubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, List<object>>>();
-            _selectObjectSubscriber.Subscribe(HomeViewSelectedChangeObject, GetSelectedObject);
+            _selectObjectSubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, bool>>();
+            _selectObjectSubscriber.Subscribe(HomeViewIsSelectedObject, GetSelectedObject);
             _genericStringPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
             CutCommand = new DelegateCommand(Cut).ObservesCanExecute(() => IsSelected);
             CopyCommand = new DelegateCommand(Copy).ObservesCanExecute(() => IsSelected);
@@ -74,35 +73,34 @@ namespace FileExplorer.ViewModels.Region
         /// <param name="selectObject"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        private ValueTask GetSelectedObject(List<object> selectObject, CancellationToken token)
+        private ValueTask GetSelectedObject(bool isSelected, CancellationToken token)
         {
-            _selectedObject = selectObject;
-            IsSelected = _selectedObject.Count > 0;
+            IsSelected = isSelected;
             return ValueTask.CompletedTask;
         }
 
         /// <summary>
         /// ファイル/ディレクトリのカット
         /// </summary>
-        private void Cut()
+        private async void Cut()
         {
-
+            await _genericStringPublisher.PublishAsync(HomeViewCutFileDirectory, "");
         }
 
         /// <summary>
         /// ファイル/ディレクトリのコピー
         /// </summary>
-        private void Copy()
+        private async void Copy()
         {
-
+            await _genericStringPublisher.PublishAsync(HomeViewCopyFileDirectory, "");
         }
 
         /// <summary>
         /// ファイル/ディレクトリのペースト
         /// </summary>
-        private void Paste()
+        private async void Paste()
         {
-
+            await _genericStringPublisher.PublishAsync(HomeViewPasteFileDirectory, "");
         }
 
         /// <summary>
@@ -119,23 +117,7 @@ namespace FileExplorer.ViewModels.Region
         /// </summary>
         private async void Remove()
         {
-            if (_selectedObject == null || _selectedObject.Count == 0) return;
-            foreach (var item in _selectedObject)
-            {
-                if (item is not FileDirectoryContent content) continue;
-
-                if (content.FullName == null) continue;
-
-                if (content.Type == "フォルダー")
-                {
-                    Directory.Delete(content.FullName, true);
-                }
-                else
-                {
-                    File.Delete(content.FullName);
-                }
-            }
-            await _genericStringPublisher.PublishAsync(HomeViewRefreshCurrentDirectory, "");
+            await _genericStringPublisher.PublishAsync(HomeViewRemoveFileDirectory, "");
         }
     }
 }

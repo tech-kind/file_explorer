@@ -111,7 +111,6 @@ namespace FileExplorer.ViewModels.Region
             _currentDirectoryPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
             _genericStringSubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
             _genericStringSubscriber.Subscribe(HomeViewChangeChildDirectory, ChangeToChiledDirectory);
-            _genericStringSubscriber.Subscribe(HomeViewRefreshCurrentDirectory, RefreshCurrentDirectory);
             UndoCommand = new DelegateCommand(Undo).ObservesCanExecute(() => CanUndo);
             RedoCommand = new DelegateCommand(Redo).ObservesCanExecute(() => CanRedo);
             ChangeParentDirectoryCommand = new DelegateCommand(ChangeToParentDirectory);
@@ -162,18 +161,6 @@ namespace FileExplorer.ViewModels.Region
 
             if (path == null) return;
             CurrentPath = path.FullName;
-        }
-
-        /// <summary>
-        /// 現在のディレクトリの内容を更新
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        private ValueTask RefreshCurrentDirectory(string message, CancellationToken token)
-        {
-            CurrentDirectoryPublish();
-            return ValueTask.CompletedTask;
         }
 
         /// <summary>

@@ -21,10 +21,11 @@ namespace FileExplorer.ViewModels.Menu
 {
     public class HomeViewModel : BindableBase
     {
+        private string? _currentDirectory;
         private readonly DispatcherTimer _timer;
         private readonly IAsyncPublisher<string, string> _genericStringPublisher;
-        private readonly IAsyncPublisher<string, List<object>> _selectedObjectPublisher;
-        private readonly IAsyncSubscriber<string, string> _currentDirectorySubscriber;
+        private readonly IAsyncPublisher<string, bool> _genericBoolPublisher;
+        private readonly IAsyncSubscriber<string, string> _genericStringSubscriber;
 
         private ObservableCollection<FileDirectoryContent> _fileDirectoryCollection
             = new();
@@ -38,7 +39,10 @@ namespace FileExplorer.ViewModels.Menu
             set { SetProperty(ref _fileDirectoryCollection, value); }
         }
 
-        private List<object> _fileDirectorySelectedCollection
+        private List<FileDirectoryContent> _fileDirectorySelectedCollection
+            = new();
+
+        private List<FileDirectoryContent> _fileDirectoryCopyCollection
             = new();
 
         /// <summary>
@@ -46,10 +50,10 @@ namespace FileExplorer.ViewModels.Menu
         /// </summary>
         public List<object> FileDirectorySelectedCollection
         {
-            get { return _fileDirectorySelectedCollection; }
+            get { return _fileDirectorySelectedCollection.ConvertAll(x => x as object); }
             set
             {
-                SetProperty(ref _fileDirectorySelectedCollection, value);
+                SetProperty(ref _fileDirectorySelectedCollection, value.ConvertAll(x => (FileDirectoryContent)x));
                 IsSelectedUpdate();
             }
         }
@@ -59,6 +63,12 @@ namespace FileExplorer.ViewModels.Menu
         /// </summary>
         public DelegateCommand ChangeChildDirectoryCommand { get; private set; }
 
+        public DelegateCommand RemoveCommand { get; private set; }
+
+        public DelegateCommand CopyCommand { get; private set; }
+
+        public DelegateCommand PasteCommand { get; private set; }
+
         /// <summary>
         /// ファイル/ディレクトリ名クリック時コマンド
         /// </summary>
@@ -67,10 +77,16 @@ namespace FileExplorer.ViewModels.Menu
         public HomeViewModel(IServiceProvider serviceProvider)
         {
             _genericStringPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, string>>();
-            _currentDirectorySubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
-            _currentDirectorySubscriber.Subscribe(HomeViewCurrentDirectory, SetCurrentDirectoryContents);
-            _selectedObjectPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, List<object>>>();
+            _genericStringSubscriber = serviceProvider.GetRequiredService<IAsyncSubscriber<string, string>>();
+            _genericStringSubscriber.Subscribe(HomeViewCurrentDirectory, SetCurrentDirectoryContents);
+            _genericStringSubscriber.Subscribe(HomeViewCopyFileDirectory, CopyFileDirectory);
+            _genericStringSubscriber.Subscribe(HomeViewPasteFileDirectory, PasteFileDirectory);
+            _genericStringSubscriber.Subscribe(HomeViewRemoveFileDirectory, RemoveFileDirectory);
+            _genericBoolPublisher = serviceProvider.GetRequiredService<IAsyncPublisher<string, bool>>();
             ChangeChildDirectoryCommand = new DelegateCommand(ChangeToChildDirectory);
+            RemoveCommand = new DelegateCommand(RemoveFromCommand);
+            CopyCommand = new DelegateCommand(CopyFromCommand);
+            PasteCommand = new DelegateCommand(PasteFromCommand);
             FileDirectoryNameClickCommand = new DelegateCommand<DataGridBeginningEditEventArgs>(ConfirmBeginEdit);
 
             _timer = new();
@@ -83,6 +99,7 @@ namespace FileExplorer.ViewModels.Menu
         /// </summary>
         private ValueTask SetCurrentDirectoryContents(string path, CancellationToken token)
         {
+            _currentDirectory = path;
             FileDirectoryCollection.Clear();
 
             // ディレクトリの取得
@@ -90,7 +107,7 @@ namespace FileExplorer.ViewModels.Menu
             foreach (var d in directories)
             {
                 DirectoryInfo info = new(d);
-                FileDirectoryContent content = new()
+                FileDirectoryContent content = new DirectoryContent()
                 {
                     IsSelected = false,
                     Icon = Icon.Folder20,
@@ -107,19 +124,91 @@ namespace FileExplorer.ViewModels.Menu
             foreach (var f in files)
             {
                 FileInfo info = new(f);
-                FileDirectoryContent content = new()
+                FileDirectoryContent content = new FileContent()
                 {
                     IsSelected = false,
                     Icon = Icon.Document20,
                     Name = info.Name,
                     Type = "ファイル",
                     UpdateTime = info.LastWriteTime.ToString("yyyy/MM/dd HH:mm"),
-                    FullName= info.FullName
+                    FullName = info.FullName
                 };
                 FileDirectoryCollection.Add(content);
             }
-
             return ValueTask.CompletedTask;
+        }
+
+        /// <summary>
+        /// コマンドからのコピー
+        /// </summary>
+        private async void CopyFromCommand()
+        {
+            await CopyFileDirectory("", new CancellationToken());
+        }
+
+        /// <summary>
+        /// 選択中のファイル/ディレクトリのコピー
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private ValueTask CopyFileDirectory(string message, CancellationToken token)
+        {
+            _fileDirectoryCopyCollection = new List<FileDirectoryContent>(_fileDirectorySelectedCollection);
+            return ValueTask.CompletedTask;
+        }
+
+        /// <summary>
+        /// コマンドからのペースト
+        /// </summary>
+        private async void PasteFromCommand()
+        {
+            await PasteFileDirectory("", new CancellationToken());
+        }
+
+        /// <summary>
+        /// 選択中のファイル/ディレクトリのペースト
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private ValueTask PasteFileDirectory(string message, CancellationToken token)
+        {
+            if (_currentDirectory == null) return ValueTask.FromCanceled(token);
+
+            foreach (var copyFile in _fileDirectoryCopyCollection)
+            {
+                copyFile.Copy(_currentDirectory);
+            }
+
+            SetCurrentDirectoryContents(_currentDirectory, token);
+
+            return _genericBoolPublisher.PublishAsync(HomeViewDataGridFocusable, true);
+        }
+
+        /// <summary>
+        /// コマンドからの削除
+        /// </summary>
+        private async void RemoveFromCommand()
+        {
+            await RemoveFileDirectory("", new CancellationToken());
+        }
+
+        /// <summary>
+        /// 選択中のファイル/ディレクトリの削除
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private ValueTask RemoveFileDirectory(string message, CancellationToken token)
+        {
+            if (_currentDirectory == null) return ValueTask.FromCanceled(token);
+
+            foreach (var selectFile in _fileDirectorySelectedCollection)
+            {
+                selectFile.Remove();
+            }
+            return SetCurrentDirectoryContents(_currentDirectory, token);
         }
 
         /// <summary>
@@ -127,24 +216,20 @@ namespace FileExplorer.ViewModels.Menu
         /// </summary>
         private async void IsSelectedUpdate()
         {
-            foreach (var file in FileDirectoryCollection)
+            foreach (var file in _fileDirectoryCollection)
             {
                 file.IsSelected = false;
             }
 
-            foreach (var selectFile in FileDirectorySelectedCollection)
+            foreach (var selectFile in _fileDirectorySelectedCollection)
             {
-                if (selectFile is not FileDirectoryContent castSelect)
-                {
-                    continue;
-                }
-                var file = FileDirectoryCollection.FirstOrDefault(x => x.Name == castSelect.Name);
+                var file = FileDirectoryCollection.FirstOrDefault(x => x.Name == selectFile.Name);
                 if (file != null)
                 {
                     file.IsSelected = true;
                 }
             }
-            await _selectedObjectPublisher.PublishAsync(HomeViewSelectedChangeObject, _fileDirectorySelectedCollection);
+            await _genericBoolPublisher.PublishAsync(HomeViewIsSelectedObject, _fileDirectorySelectedCollection.Count > 0);
         }
 
         /// <summary>
